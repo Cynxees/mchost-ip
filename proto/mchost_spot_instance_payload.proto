@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package mchost_spot_instance.service.v1;
+option go_package = "./pb";
+
+message Empty {}
+
+message DefaultResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}

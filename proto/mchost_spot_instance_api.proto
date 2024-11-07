@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package mchost_spot_instance.service.v1;
+option go_package = "./pb";
+
+service SpotService {
+
+
+}

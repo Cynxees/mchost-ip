@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package mchost_spot_instance.service.v1;
+option go_package = "./pb";
+
+message Spot {
+    uint64 id = 1;
+    uint64 userId = 2;
+    string name = 3;
+    google.protobuf.Timestamp created_at = 4;
+    google.protobuf.Timestamp updated_at = 5;
+}
