@@ -1,6 +1,7 @@
 package api
 
 import (
+	aws "mchost-spot-instance/server/aws"
 	"mchost-spot-instance/server/config"
 	manager "mchost-spot-instance/server/jwt"
 	"mchost-spot-instance/server/pb"
@@ -11,8 +12,9 @@ import (
 
 type Server struct {
 	pb.SpotServiceServer
-	Db      *gorm.DB
-	Logger  *logrus.Logger
-	Manager *manager.JWTManager
-	Config  *config.Config
+	Db         *gorm.DB
+	Logger     *logrus.Logger
+	JWTManager *manager.JWTManager
+	AppConfig  *config.Config
+	AWSManager *aws.AWSManager
 }

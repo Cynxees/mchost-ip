@@ -1,4 +1,60 @@
+definitions:
+  pb.GetSpotFleetRequest:
+    properties:
+      spotFleetId:
+        type: string
+    type: object
 info:
   contact: {}
-paths: {}
+paths:
+  /get-instance:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.GetSpotFleetRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Get Spot Fleet Instances
+      tags:
+      - Spot
+  /launch:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Launch Spot Fleet Instances
+      tags:
+      - Spot
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: do ping
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: ping example
+      tags:
+      - example
 swagger: "2.0"

@@ -19,15 +19,20 @@ type Config struct {
 	CorsAllowedMethods []string `config:"CORS_ALLOWED_METHODS"`
 	CorsAllowedOrigins []string `config:"CORS_ALLOWED_ORIGINS"`
 
-	AppName          string `config:"APP_NAME"`
-	AppKey           string `config:"APP_KEY"`
+	AppName string `config:"APP_NAME"`
+	AppKey  string `config:"APP_KEY"`
+
 	AppPort          string `config:"APP_PORT"`
 	MicroservicePort string `config:"MICROSERVICE_PORT"`
-	DbPort           string `config:"DbPort_PORT"`
-	DbHost           string `config:"DB_HOST"`
-	DbName           string `config:"DB_NAME"`
-	DbUsername       string `config:"DB_USERNAME"`
-	DbPassword       string `config:"DB_PASSWORD"`
+
+	DbPort     string `config:"DB_PORT"`
+	DbHost     string `config:"DB_HOST"`
+	DbName     string `config:"DB_NAME"`
+	DbUsername string `config:"DB_USERNAME"`
+	DbPassword string `config:"DB_PASSWORD"`
+
+	AwsAccessKeyId     string `config:"AWS_ACCESS_KEY_ID"`
+	AwsAccessKeySecret string `config:"AWS_ACCESS_KEY_SECRET"`
 }
 
 func InitConfig(path string) *Config {
@@ -48,6 +53,8 @@ func InitConfig(path string) *Config {
 	dbName := getEnv("DB_NAME")
 	dbUsername := getEnv("DB_USERNAME")
 	dbPassword := getEnv("DB_PASSWORD")
+	awsAccessKeyId := getEnv("AWS_ACCESS_KEY_ID")
+	awsAccessKeySecret := getEnv("AWS_ACCESS_KEY_SECRET")
 
 	return &Config{
 		ListenAddress: fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT")),
@@ -69,6 +76,8 @@ func InitConfig(path string) *Config {
 		DbName:             dbName,
 		DbUsername:         dbUsername,
 		DbPassword:         dbPassword,
+		AwsAccessKeyId:     awsAccessKeyId,
+		AwsAccessKeySecret: awsAccessKeySecret,
 	}
 }
 

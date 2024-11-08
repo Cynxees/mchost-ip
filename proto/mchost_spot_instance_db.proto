@@ -5,10 +5,14 @@ import "google/protobuf/timestamp.proto";
 package mchost_spot_instance.service.v1;
 option go_package = "./pb";
 
-message Spot {
+message SpotInstanceTemplate {
     uint64 id = 1;
-    uint64 userId = 2;
-    string name = 3;
-    google.protobuf.Timestamp created_at = 4;
-    google.protobuf.Timestamp updated_at = 5;
+    string fleetRequestId = 2;
+    string instanceId = 3;
+    uint64 userId = 4;
+    string name = 5;
+    string status = 6;
+    string instanceType = 7;
+    google.protobuf.Timestamp created_at = 8;
+    google.protobuf.Timestamp updated_at = 9;
 }

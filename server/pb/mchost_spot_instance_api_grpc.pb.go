@@ -7,7 +7,10 @@
 package pb
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,10 +18,21 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	SpotService_GetTemplate_FullMethodName    = "/mchost_spot_instance.service.v1.SpotService/GetTemplate"
+	SpotService_LaunchTemplate_FullMethodName = "/mchost_spot_instance.service.v1.SpotService/LaunchTemplate"
+	SpotService_StopTemplate_FullMethodName   = "/mchost_spot_instance.service.v1.SpotService/StopTemplate"
+	SpotService_CreateTemplate_FullMethodName = "/mchost_spot_instance.service.v1.SpotService/CreateTemplate"
+)
+
 // SpotServiceClient is the client API for SpotService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SpotServiceClient interface {
+	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
+	LaunchTemplate(ctx context.Context, in *LaunchTemplateRequest, opts ...grpc.CallOption) (*LaunchTemplateResponse, error)
+	StopTemplate(ctx context.Context, in *StopTemplateRequest, opts ...grpc.CallOption) (*StopTemplateResponse, error)
+	CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
 }
 
 type spotServiceClient struct {
@@ -29,10 +43,54 @@ func NewSpotServiceClient(cc grpc.ClientConnInterface) SpotServiceClient {
 	return &spotServiceClient{cc}
 }
 
+func (c *spotServiceClient) GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTemplateResponse)
+	err := c.cc.Invoke(ctx, SpotService_GetTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spotServiceClient) LaunchTemplate(ctx context.Context, in *LaunchTemplateRequest, opts ...grpc.CallOption) (*LaunchTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LaunchTemplateResponse)
+	err := c.cc.Invoke(ctx, SpotService_LaunchTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spotServiceClient) StopTemplate(ctx context.Context, in *StopTemplateRequest, opts ...grpc.CallOption) (*StopTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StopTemplateResponse)
+	err := c.cc.Invoke(ctx, SpotService_StopTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *spotServiceClient) CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTemplateResponse)
+	err := c.cc.Invoke(ctx, SpotService_CreateTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SpotServiceServer is the server API for SpotService service.
 // All implementations must embed UnimplementedSpotServiceServer
 // for forward compatibility.
 type SpotServiceServer interface {
+	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
+	LaunchTemplate(context.Context, *LaunchTemplateRequest) (*LaunchTemplateResponse, error)
+	StopTemplate(context.Context, *StopTemplateRequest) (*StopTemplateResponse, error)
+	CreateTemplate(context.Context, *CreateTemplateRequest) (*GetTemplateResponse, error)
 	mustEmbedUnimplementedSpotServiceServer()
 }
 
@@ -43,6 +101,18 @@ type SpotServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSpotServiceServer struct{}
 
+func (UnimplementedSpotServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTemplate not implemented")
+}
+func (UnimplementedSpotServiceServer) LaunchTemplate(context.Context, *LaunchTemplateRequest) (*LaunchTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LaunchTemplate not implemented")
+}
+func (UnimplementedSpotServiceServer) StopTemplate(context.Context, *StopTemplateRequest) (*StopTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StopTemplate not implemented")
+}
+func (UnimplementedSpotServiceServer) CreateTemplate(context.Context, *CreateTemplateRequest) (*GetTemplateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTemplate not implemented")
+}
 func (UnimplementedSpotServiceServer) mustEmbedUnimplementedSpotServiceServer() {}
 func (UnimplementedSpotServiceServer) testEmbeddedByValue()                     {}
 
@@ -64,13 +134,102 @@ func RegisterSpotServiceServer(s grpc.ServiceRegistrar, srv SpotServiceServer) {
 	s.RegisterService(&SpotService_ServiceDesc, srv)
 }
 
+func _SpotService_GetTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpotServiceServer).GetTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SpotService_GetTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpotServiceServer).GetTemplate(ctx, req.(*GetTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpotService_LaunchTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LaunchTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpotServiceServer).LaunchTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SpotService_LaunchTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpotServiceServer).LaunchTemplate(ctx, req.(*LaunchTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpotService_StopTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StopTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpotServiceServer).StopTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SpotService_StopTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpotServiceServer).StopTemplate(ctx, req.(*StopTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SpotService_CreateTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SpotServiceServer).CreateTemplate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SpotService_CreateTemplate_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SpotServiceServer).CreateTemplate(ctx, req.(*CreateTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SpotService_ServiceDesc is the grpc.ServiceDesc for SpotService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SpotService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "mchost_spot_instance.service.v1.SpotService",
 	HandlerType: (*SpotServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "proto/mchost_spot_instance_api.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetTemplate",
+			Handler:    _SpotService_GetTemplate_Handler,
+		},
+		{
+			MethodName: "LaunchTemplate",
+			Handler:    _SpotService_LaunchTemplate_Handler,
+		},
+		{
+			MethodName: "StopTemplate",
+			Handler:    _SpotService_StopTemplate_Handler,
+		},
+		{
+			MethodName: "CreateTemplate",
+			Handler:    _SpotService_CreateTemplate_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "proto/mchost_spot_instance_api.proto",
 }

@@ -5,6 +5,7 @@ go 1.22.0
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.28.2
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.43
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.187.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
@@ -24,7 +25,6 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.43 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.19 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.23 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.23 // indirect
