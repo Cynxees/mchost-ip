@@ -6,6 +6,7 @@ import (
 	manager "mchost-spot-instance/server/jwt"
 	"mchost-spot-instance/server/pb"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -17,4 +18,5 @@ type Server struct {
 	JWTManager *manager.JWTManager
 	AppConfig  *config.Config
 	AWSManager *aws.AWSManager
+	Redis 		 *redis.Client
 }

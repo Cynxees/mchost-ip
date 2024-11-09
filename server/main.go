@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mchost-spot-instance/server/api"
 	awsManager "mchost-spot-instance/server/aws"
+	queue "mchost-spot-instance/server/queue"
 	"mchost-spot-instance/server/config"
 	controller "mchost-spot-instance/server/controller"
 	jwtManager "mchost-spot-instance/server/jwt"
@@ -59,7 +60,7 @@ func main() {
 		esLogger.Fatalf("failed to connect database: %v", err)
 	}
 
-	db.AutoMigrate(&models.SpotInstance{})
+	db.AutoMigrate(&models.SpotInstanceTemplate{})
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", appConfig.MicroservicePort))
 	if err != nil {
@@ -78,7 +79,10 @@ func main() {
 		JWTManager: jwtManager.NewJWTManager(appConfig.AppKey, 3600, esLogger),
 		AppConfig:  appConfig,
 		AWSManager: awsManager.NewAWSManager(appConfig.AwsAccessKeyId, appConfig.AwsAccessKeySecret),
+		Redis: queue.NewRedisClient(),
 	}
+
+	queue.StartSpotInstanceWorker(server)
 
 	router := gin.Default()
 

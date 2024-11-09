@@ -16,12 +16,20 @@ func SetupHandlers(router *gin.Engine, server *api.Server) {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	router.GET("/api/launch", func(c *gin.Context) {
+	router.POST("/api/launch", func(c *gin.Context) {
 		launchSpotFleetHandler(c, server)
 	})
 
 	router.POST("/api/get-instance", func(c *gin.Context) {
 		getSpotFleetHandler(c, server)
+	})
+
+	router.POST("/api/create", func(c *gin.Context) {
+		createSpotFleetHandler(c, server)
+	})
+
+	router.POST("/api/stop", func(c *gin.Context) {
+		stopSpotFleetHandler(c, server)
 	})
 
 	router.GET("/api/ping", Helloworld)
@@ -58,18 +66,24 @@ func Helloworld(g *gin.Context) {
 	g.JSON(http.StatusOK, "helloworld")
 }
 
-// LaunchSpotFleet godoc
+// LaunchSpotFleetTemplate godoc
 // @Summary Launch Spot Fleet Instances
-// @Schemes
 // @Tags Spot
 // @Accept json
 // @Produce json
+// @Param			requestBody	body		pb.LaunchTemplateRequest	true	"Request Body"
 // @Success 200 {string} Helloworld
-// @Router /launch [get]
+// @Router /launch [post]
 func launchSpotFleetHandler(c *gin.Context, server *api.Server) {
 	ctx := context.Background()
 	
-	resp, err := server.LaunchSpotFleet(ctx)
+	var request pb.LaunchTemplateRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+	
+	resp, err := server.LaunchSpotFleet(ctx, &request);
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
@@ -78,12 +92,64 @@ func launchSpotFleetHandler(c *gin.Context, server *api.Server) {
 	c.JSON(200, resp)
 }
 
-// GetSpotFleet godoc
+// CreateSpotFleetTemplate godoc
+// @Summary Create Spot Fleet Template
+// @Tags Spot
+// @Accept json
+// @Produce json
+// @Param			requestBody	body		pb.CreateTemplateRequest	true	"Request Body"
+// @Success 200 {string} Helloworld
+// @Router /create [post]
+func createSpotFleetHandler(c *gin.Context, server *api.Server) {
+	ctx := context.Background()
+
+	var request pb.CreateTemplateRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	resp, err := server.CreateTemplate(ctx, &request);
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, resp)
+}
+
+// StopSpotFleetTemplate godoc
+// @Summary Stop Spot Fleet Instances
+// @Tags Spot
+// @Accept json
+// @Produce json
+// @Param			requestBody	body		pb.StopTemplateRequest	true	"Request Body"
+// @Success 200 {string} Helloworld
+// @Router /stop [post]
+func stopSpotFleetHandler(c *gin.Context, server *api.Server) {
+	ctx := context.Background()
+
+	var request pb.StopTemplateRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	resp, err := server.StopTemplate(ctx, &request);
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, resp)
+}
+
+// GetSpotFleetTemplate godoc
 // @Summary Get Spot Fleet Instances
 // @Tags Spot
 // @Accept json
 // @Produce json
-// @Param			requestBody	body		pb.GetSpotFleetRequest	true	"Request Body"
+// @Param			requestBody	body		pb.GetTemplateRequest	true	"Request Body"
 // @Success 200 {string} Helloworld
 // @Router /get-instance [post]
 func getSpotFleetHandler(c *gin.Context, server *api.Server) {
@@ -95,7 +161,7 @@ func getSpotFleetHandler(c *gin.Context, server *api.Server) {
 		return
 	}
 
-	resp, err := server.GetSpotFleet(ctx, request.SpotInstanceId)
+	resp, err := server.GetTemplate(ctx, &request);
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return

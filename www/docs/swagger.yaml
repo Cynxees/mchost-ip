@@ -1,12 +1,48 @@
 definitions:
-  pb.GetSpotFleetRequest:
+  pb.CreateTemplateRequest:
     properties:
-      spotFleetId:
+      name:
         type: string
+    type: object
+  pb.GetTemplateRequest:
+    properties:
+      spotInstanceTemplateId:
+        type: integer
+    type: object
+  pb.LaunchTemplateRequest:
+    properties:
+      spotInstanceTemplateId:
+        type: integer
+    type: object
+  pb.StopTemplateRequest:
+    properties:
+      spotInstanceTemplateId:
+        type: integer
     type: object
 info:
   contact: {}
 paths:
+  /create:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.CreateTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Create Spot Fleet Template
+      tags:
+      - Spot
   /get-instance:
     post:
       consumes:
@@ -17,7 +53,7 @@ paths:
         name: requestBody
         required: true
         schema:
-          $ref: '#/definitions/pb.GetSpotFleetRequest'
+          $ref: '#/definitions/pb.GetTemplateRequest'
       produces:
       - application/json
       responses:
@@ -29,9 +65,16 @@ paths:
       tags:
       - Spot
   /launch:
-    get:
+    post:
       consumes:
       - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.LaunchTemplateRequest'
       produces:
       - application/json
       responses:
@@ -57,4 +100,25 @@ paths:
       summary: ping example
       tags:
       - example
+  /stop:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.StopTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Stop Spot Fleet Instances
+      tags:
+      - Spot
 swagger: "2.0"

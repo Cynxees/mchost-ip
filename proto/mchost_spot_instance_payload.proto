@@ -18,7 +18,7 @@ message CreateTemplateRequest {
 }
 
 message GetTemplateRequest {
-  string spotInstanceTemplateId = 1;
+  int64 spotInstanceTemplateId = 1;
 }
 
 message GetTemplateResponse {
@@ -29,7 +29,7 @@ message GetTemplateResponse {
 }
 
 message LaunchTemplateRequest {
-  string spotInstanceTemplateId = 1;
+  int64 spotInstanceTemplateId = 1;
 }
 
 message LaunchTemplateResponse {
@@ -39,7 +39,7 @@ message LaunchTemplateResponse {
 }
 
 message StopTemplateRequest {
-  string spotInstanceTemplateId = 1;
+  int64 spotInstanceTemplateId = 1;
 }
 
 message StopTemplateResponse {

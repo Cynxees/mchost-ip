@@ -13,6 +13,8 @@ message SpotInstanceTemplate {
     string name = 5;
     string status = 6;
     string instanceType = 7;
-    google.protobuf.Timestamp created_at = 8;
-    google.protobuf.Timestamp updated_at = 9;
+    string region = 8;
+    string amiId = 9;
+    google.protobuf.Timestamp created_at = 10;
+    google.protobuf.Timestamp updated_at = 11;
 }

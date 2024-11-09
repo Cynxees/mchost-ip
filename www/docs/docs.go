@@ -15,6 +15,39 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/create": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spot"
+                ],
+                "summary": "Create Spot Fleet Template",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "requestBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pb.CreateTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/get-instance": {
             "post": {
                 "consumes": [
@@ -34,7 +67,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.GetSpotFleetRequest"
+                            "$ref": "#/definitions/pb.GetTemplateRequest"
                         }
                     }
                 ],
@@ -49,7 +82,7 @@ const docTemplate = `{
             }
         },
         "/launch": {
-            "get": {
+            "post": {
                 "consumes": [
                     "application/json"
                 ],
@@ -60,6 +93,17 @@ const docTemplate = `{
                     "Spot"
                 ],
                 "summary": "Launch Spot Fleet Instances",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "requestBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pb.LaunchTemplateRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -92,14 +136,71 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/stop": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Spot"
+                ],
+                "summary": "Stop Spot Fleet Instances",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "requestBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pb.StopTemplateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
-        "pb.GetSpotFleetRequest": {
+        "pb.CreateTemplateRequest": {
             "type": "object",
             "properties": {
-                "spotFleetId": {
+                "name": {
                     "type": "string"
+                }
+            }
+        },
+        "pb.GetTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "spotInstanceTemplateId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pb.LaunchTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "spotInstanceTemplateId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pb.StopTemplateRequest": {
+            "type": "object",
+            "properties": {
+                "spotInstanceTemplateId": {
+                    "type": "integer"
                 }
             }
         }
