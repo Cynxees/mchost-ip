@@ -80,7 +80,7 @@ func StartSpotInstanceWorker(server *api.Server) {
 
 func assignElasticIP(ctx context.Context, server *api.Server, instanceID string) error {
 
-	eipAllocationID := "eipalloc-00074f56c88934ce3"
+	eipAllocationID := "eipalloc-0d3131e17bfd77974"
 
 	// Associate the Elastic IP with the instance
 	_, err := server.AWSManager.EC2Client.AssociateAddress(ctx, &ec2.AssociateAddressInput{

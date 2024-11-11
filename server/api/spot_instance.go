@@ -87,7 +87,7 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 			LaunchSpecifications: []types.SpotFleetLaunchSpecification{
 				{
 					ImageId:      aws.String("ami-01a2a35c416a9b378"),
-					InstanceType: types.InstanceTypeT3Micro,
+					InstanceType: types.InstanceTypeT32xlarge,
 					KeyName:      aws.String("minecraft-server"),
 					SecurityGroups: []types.GroupIdentifier{
 						{
