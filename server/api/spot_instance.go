@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -55,10 +54,14 @@ func (s *Server) CreateTemplate(ctx context.Context, request *pb.CreateTemplateR
 func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplateRequest) (*ec2.RequestSpotFleetOutput, error) {
 
   result, err := s.GetTemplate(ctx, &pb.GetTemplateRequest{SpotInstanceTemplateId: request.SpotInstanceTemplateId});
+  if err != nil {
+    return nil, err
+  }
+
   template := result.Template
 
   if(template.Status == "ACTIVE") {
-    return nil, errors.New("Template is already active")
+    return nil, errors.New("template is already active")
   }
 
 	client := s.AWSManager.EC2Client
@@ -68,16 +71,27 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 
 			IamFleetRole:   aws.String("arn:aws:iam::071412439153:role/aws-ec2-spot-fleet-tagging-role"),
 			TargetCapacity: aws.Int32(1),
+      TagSpecifications: []types.TagSpecification{
+        {
+          ResourceType: "instance",
+          Tags: []types.Tag{
+            {
+              Key: aws.String("project"),
+              Value: aws.String("mchost"),
+            },
+          },
+        },
+      },
 
 			InstanceInterruptionBehavior: types.InstanceInterruptionBehaviorStop,
 			LaunchSpecifications: []types.SpotFleetLaunchSpecification{
 				{
-					ImageId:      aws.String("ami-0f35248300a04b419"),
+					ImageId:      aws.String("ami-01a2a35c416a9b378"),
 					InstanceType: types.InstanceTypeT3Micro,
 					KeyName:      aws.String("minecraft-server"),
 					SecurityGroups: []types.GroupIdentifier{
 						{
-							GroupId: aws.String("sg-086ac6894e23bbcd2"),
+							GroupId: aws.String("sg-06f8c1349d5087902"),
 						},
 					},
 
@@ -111,7 +125,7 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 		Member: fleetRequest.SpotFleetRequestId,
 	}).Err()
 	if err != nil {
-		return nil, errors.New("Failed to push to queue");
+		return nil, errors.New("failed to push to queue");
 	}
 
 	return fleetRequest, nil
@@ -189,13 +203,18 @@ func (s *Server) StopTemplate (ctx context.Context, request *pb.StopTemplateRequ
   }
 
   if template.Status != "ACTIVE" {
-    return nil, errors.New("Template is not active")
+    return nil, errors.New("template is not active")
   }
 
   if template.FleetRequestId == nil {
-    return nil, errors.New("Fleet request ID is nil")
+    return nil, errors.New("fleet request ID is nil")
   }
-
+  
+	if err := s.runStopScript(ctx, *template.InstanceId); err != nil {
+    s.Logger.Error("Failed to run Stop Script:", err)
+		return nil, errors.New("failed to run stop script")
+	}
+  
   _, err := s.AWSManager.EC2Client.CancelSpotFleetRequests(ctx, &ec2.CancelSpotFleetRequestsInput{
     TerminateInstances: aws.Bool(true),
     SpotFleetRequestIds: []string{*template.FleetRequestId},
@@ -204,11 +223,6 @@ func (s *Server) StopTemplate (ctx context.Context, request *pb.StopTemplateRequ
   if err != nil {
     return nil, err
   }
-
-	if err := s.uploadWorldToS3(ctx, *template.InstanceId); err != nil {
-		s.Logger.Error("Failed to upload world to S3:", err)
-		return nil, errors.New("Failed to upload world to S3")
-	}
 
   if err := s.Db.Model(&models.SpotInstanceTemplate{}).
     Where("id = ?", request.SpotInstanceTemplateId).
@@ -227,8 +241,8 @@ func (s *Server) StopTemplate (ctx context.Context, request *pb.StopTemplateRequ
   }, nil
 }
 
-// uploadWorldToS3 connects to the EC2 instance and uploads the Minecraft world to S3
-func (s *Server) uploadWorldToS3(ctx context.Context, instanceId string) error {
+// runStopScript connects to the EC2 instance and uploads the Minecraft data to S3
+func (s *Server) runStopScript(ctx context.Context, instanceId string) error {
 	// Fetch instance details to get public IP
 	instanceDetails, err := s.AWSManager.EC2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
 		InstanceIds: []string{instanceId},
@@ -250,8 +264,8 @@ func (s *Server) uploadWorldToS3(ctx context.Context, instanceId string) error {
 	}
 	defer sshClient.Close()
 
-	// Upload world files to S3
-	cmd := fmt.Sprintf("aws s3 sync /home/ubuntu/minecraft-prominence-server/world s3://mchost-%s --delete", *instance.Placement.AvailabilityZone)
+	// Stop, Upload data files to S3
+	cmd := "/home/ubuntu/mchost/mchost-config/scripts/stop.sh"
 	// cmd := fmt.Sprintf("aws s3 sync /homemchost-%s", *instance.Placement.AvailabilityZone)
 	session, err := sshClient.NewSession()
 	if err != nil {
@@ -259,14 +273,14 @@ func (s *Server) uploadWorldToS3(ctx context.Context, instanceId string) error {
 	}
 	defer session.Close()
 
-	var stdoutBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-
-	if err := session.Run(cmd); err != nil {
-		return fmt.Errorf("failed to run S3 sync command: %v", err)
+  s.Logger.Info("Running stop command:", cmd)
+	output, err := session.CombinedOutput(cmd); 
+  
+  if err != nil {
+		return fmt.Errorf("failed to run stop command: %v", err)
 	}
 
-	fmt.Println("S3 Upload Output:", stdoutBuf.String())
+	fmt.Println("Stop command Output:", string(output))
 	return nil
 }
 
@@ -274,18 +288,21 @@ func (s *Server) uploadWorldToS3(ctx context.Context, instanceId string) error {
 func (s *Server) connectSSH(host string) (*ssh.Client, error) {
 
 	config := &ssh.ClientConfig{
-		User: "user",
+		User: "ubuntu",
 		Auth: []ssh.AuthMethod{
-			ssh.Password("password"),
+			ssh.Password("pass"),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         5 * time.Second,
 	}
 
 	addr := fmt.Sprintf("%s:%d", host, 22)
+  s.Logger.Info("Connecting to SSH:", addr)
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to SSH: %w", err)
 	}
+
+  s.Logger.Info("Connected to SSH:", addr)
 	return client, nil
 }
