@@ -66,6 +66,8 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 
 	client := s.AWSManager.EC2Client
 
+  s.Logger.Info(template)
+
 	spotRequestInput := &ec2.RequestSpotFleetInput{
 		SpotFleetRequestConfig: &types.SpotFleetRequestConfigData{
 
@@ -73,7 +75,7 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 			TargetCapacity: aws.Int32(1),
       TagSpecifications: []types.TagSpecification{
         {
-          ResourceType: "instance",
+          ResourceType: types.ResourceTypeSpotFleetRequest,
           Tags: []types.Tag{
             {
               Key: aws.String("project"),
@@ -86,7 +88,7 @@ func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplate
 			InstanceInterruptionBehavior: types.InstanceInterruptionBehaviorStop,
 			LaunchSpecifications: []types.SpotFleetLaunchSpecification{
 				{
-					ImageId:      aws.String("ami-01a2a35c416a9b378"),
+					ImageId:      aws.String(template.AmiId),
 					InstanceType: types.InstanceTypeT32xlarge,
 					KeyName:      aws.String("minecraft-server"),
 					SecurityGroups: []types.GroupIdentifier{
@@ -150,6 +152,7 @@ func (s *Server) GetTemplate (ctx context.Context, request *pb.GetTemplateReques
 
     if len(fleetRequest.SpotFleetRequestConfigs) > 0 {
 
+      s.Logger.Info("getting instances")
       instances, err := s.AWSManager.EC2Client.DescribeSpotFleetInstances(ctx, &ec2.DescribeSpotFleetInstancesInput{
         SpotFleetRequestId: template.FleetRequestId,
       })
@@ -158,11 +161,12 @@ func (s *Server) GetTemplate (ctx context.Context, request *pb.GetTemplateReques
       }
 
       if len(instances.ActiveInstances) > 0 {
+        s.Logger.Info("getting active instance")
         firstInstanceId := instances.ActiveInstances[0].InstanceId
         template.InstanceId = firstInstanceId
         s.Logger.Info("First instance ID:", *firstInstanceId)
       } else {
-          s.Logger.Warn("No active instances found for fleet request:", *template.FleetRequestId)
+        s.Logger.Warn("No active instances found for fleet request:", *template.FleetRequestId)
       }
     }
   }
@@ -191,6 +195,7 @@ func (s *Server) GetTemplate (ctx context.Context, request *pb.GetTemplateReques
       InstanceType: template.InstanceType,
       CreatedAt: timestamppb.New(template.CreatedAt),
       UpdatedAt: timestamppb.New(template.UpdatedAt),
+      AmiId: template.AmiId,
     },
   }, nil
 }

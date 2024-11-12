@@ -29,11 +29,12 @@ import (
 
 func main() {
 
+	fmt.Println("starting server")
 	appConfig := config.InitConfig(".env")
 
 	docs.SwaggerInfo.Title = "Spot Instance API"
 	docs.SwaggerInfo.Version = "1.0"
-	docs.SwaggerInfo.Host = fmt.Sprintf("localhost:%s", appConfig.AppPort)
+	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%s", appConfig.CurrentAddress, appConfig.AppPort)
 	docs.SwaggerInfo.BasePath = "/api"
 
 	esLogger := logrus.New()

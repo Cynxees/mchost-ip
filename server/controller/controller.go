@@ -16,6 +16,12 @@ func SetupHandlers(router *gin.Engine, server *api.Server) {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	router.LoadHTMLFiles("index.html")
+
+	router.GET("/home", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.html", gin.H{})
+	})
+
 	router.POST("/api/launch", func(c *gin.Context) {
 		launchSpotFleetHandler(c, server)
 	})

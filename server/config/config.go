@@ -33,6 +33,8 @@ type Config struct {
 
 	AwsAccessKeyId     string `config:"AWS_ACCESS_KEY_ID"`
 	AwsAccessKeySecret string `config:"AWS_ACCESS_KEY_SECRET"`
+
+	CurrentAddress string `config:CURRENT_ADDRESS`
 }
 
 func InitConfig(path string) *Config {
@@ -55,6 +57,7 @@ func InitConfig(path string) *Config {
 	dbPassword := getEnv("DB_PASSWORD")
 	awsAccessKeyId := getEnv("AWS_ACCESS_KEY_ID")
 	awsAccessKeySecret := getEnv("AWS_ACCESS_KEY_SECRET")
+	currentAddress := getEnv("CURRENT_ADDRESS")
 
 	return &Config{
 		ListenAddress: fmt.Sprintf("%s:%s", os.Getenv("HOST"), os.Getenv("PORT")),
@@ -78,6 +81,7 @@ func InitConfig(path string) *Config {
 		DbPassword:         dbPassword,
 		AwsAccessKeyId:     awsAccessKeyId,
 		AwsAccessKeySecret: awsAccessKeySecret,
+		CurrentAddress: currentAddress,
 	}
 }
 
