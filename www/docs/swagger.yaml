@@ -1,22 +1,31 @@
 definitions:
-  pb.CreateTemplateRequest:
+  pb.CreateIpRequest:
     properties:
       name:
         type: string
-    type: object
-  pb.GetTemplateRequest:
-    properties:
-      spotInstanceTemplateId:
+      userId:
         type: integer
     type: object
-  pb.LaunchTemplateRequest:
+  pb.DeleteIpRequest:
     properties:
-      spotInstanceTemplateId:
+      ipId:
         type: integer
     type: object
-  pb.StopTemplateRequest:
+  pb.GetIpRequest:
     properties:
-      spotInstanceTemplateId:
+      ipId:
+        type: integer
+    type: object
+  pb.UnuseIpRequest:
+    properties:
+      ipId:
+        type: integer
+    type: object
+  pb.UseIpRequest:
+    properties:
+      instanceId:
+        type: string
+      ipId:
         type: integer
     type: object
 info:
@@ -32,7 +41,7 @@ paths:
         name: requestBody
         required: true
         schema:
-          $ref: '#/definitions/pb.CreateTemplateRequest'
+          $ref: '#/definitions/pb.CreateIpRequest'
       produces:
       - application/json
       responses:
@@ -40,9 +49,30 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Create Spot Fleet Template
+      summary: Create Ip Fleet Ip
       tags:
-      - Spot
+      - Ip
+  /delete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.DeleteIpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Delete Ip
+      tags:
+      - Ip
   /get-instance:
     post:
       consumes:
@@ -53,7 +83,7 @@ paths:
         name: requestBody
         required: true
         schema:
-          $ref: '#/definitions/pb.GetTemplateRequest'
+          $ref: '#/definitions/pb.GetIpRequest'
       produces:
       - application/json
       responses:
@@ -61,30 +91,9 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Get Spot Fleet Instances
+      summary: Get Ip Fleet Instances
       tags:
-      - Spot
-  /launch:
-    post:
-      consumes:
-      - application/json
-      parameters:
-      - description: Request Body
-        in: body
-        name: requestBody
-        required: true
-        schema:
-          $ref: '#/definitions/pb.LaunchTemplateRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: Launch Spot Fleet Instances
-      tags:
-      - Spot
+      - Ip
   /ping:
     get:
       consumes:
@@ -100,7 +109,7 @@ paths:
       summary: ping example
       tags:
       - example
-  /stop:
+  /unuse:
     post:
       consumes:
       - application/json
@@ -110,7 +119,7 @@ paths:
         name: requestBody
         required: true
         schema:
-          $ref: '#/definitions/pb.StopTemplateRequest'
+          $ref: '#/definitions/pb.UnuseIpRequest'
       produces:
       - application/json
       responses:
@@ -118,7 +127,28 @@ paths:
           description: OK
           schema:
             type: string
-      summary: Stop Spot Fleet Instances
+      summary: Unuse Ip
       tags:
-      - Spot
+      - Ip
+  /use:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Request Body
+        in: body
+        name: requestBody
+        required: true
+        schema:
+          $ref: '#/definitions/pb.UseIpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Use Ip
+      tags:
+      - Ip
 swagger: "2.0"

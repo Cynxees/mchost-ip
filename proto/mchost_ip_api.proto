@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+import "proto/mchost_ip_payload.proto";
+
+package mchost_ip.service.v1;
+option go_package = "./pb";
+
+service IpService {
+  rpc GetIp (GetIpRequest) returns (GetIpResponse);
+  rpc CreateIp (CreateIpRequest) returns (CreateIpResponse);
+  rpc DeleteIp (DeleteIpRequest) returns (DeleteIpResponse);
+  
+  rpc ReserveIp (ReserveIpRequest) returns (ReserveIpResponse);
+  rpc UnreserveIp (UnreserveIpRequest) returns (UnreserveIpResponse);
+
+  rpc UseIp (UseIpRequest) returns (UseIpResponse);
+  rpc UnuseIp (UnuseIpRequest) returns (UnuseIpResponse);
+}

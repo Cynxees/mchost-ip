@@ -2,24 +2,23 @@ package main
 
 import (
 	"fmt"
-	"mchost-spot-instance/server/api"
-	awsManager "mchost-spot-instance/server/aws"
-	queue "mchost-spot-instance/server/queue"
-	"mchost-spot-instance/server/config"
-	controller "mchost-spot-instance/server/controller"
-	jwtManager "mchost-spot-instance/server/jwt"
+	"mchost-ip/server/api"
+	awsManager "mchost-ip/server/aws"
+	"mchost-ip/server/config"
+	controller "mchost-ip/server/controller"
+	jwtManager "mchost-ip/server/jwt"
 
-	// "mchost-spot-instance/server/lib/rabbitmq"
-	"mchost-spot-instance/server/models"
-	"mchost-spot-instance/server/pb"
+	// "mchost-ip/server/lib/rabbitmq"
+	"mchost-ip/server/models"
+	"mchost-ip/server/pb"
 	"net"
 
-	"mchost-spot-instance/www/docs"
+	"mchost-ip/www/docs"
 
-	// elasticLog "gopkg.in/sohlich/elogrus.v7"
+	elasticLog "gopkg.in/sohlich/elogrus.v7"
 
 	"github.com/gin-gonic/gin"
-	// "github.com/olivere/elastic/v7"
+	"github.com/olivere/elastic/v7"
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/ecslogrus"
 	"google.golang.org/grpc"
@@ -32,7 +31,7 @@ func main() {
 	fmt.Println("starting server")
 	appConfig := config.InitConfig(".env")
 
-	docs.SwaggerInfo.Title = "Spot Instance API"
+	docs.SwaggerInfo.Title = "Ip Instance API"
 	docs.SwaggerInfo.Version = "1.0"
 	docs.SwaggerInfo.Host = fmt.Sprintf("%s:%s", appConfig.CurrentAddress, appConfig.AppPort)
 	docs.SwaggerInfo.BasePath = "/api"
@@ -41,18 +40,18 @@ func main() {
 	esLogger.SetFormatter(&ecslogrus.Formatter{})
 	esLogger.SetLevel(logrus.InfoLevel)
 
-	// client, err := elastic.NewClient(elastic.SetURL("http://localhost:9200"), elastic.SetSniff(false))
-	// if err != nil {
-	// 	esLogger.Fatalf("Failed to create elasticsearch client: %v", err)
-	// }
+	client, err := elastic.NewClient(elastic.SetURL("http://localhost:9200"), elastic.SetSniff(false))
+	if err != nil {
+		esLogger.Fatalf("Failed to create elasticsearch client: %v", err)
+	}
 
-	// hook, err := elasticLog.NewAsyncElasticHook(client, serviceName, logrus.InfoLevel, "go-auth-logs")
-	// if err != nil {
-	// 	logrus.Fatalf("Failed to create Elasticsearch hook: %v", err)
-	// }
-	// esLogger.AddHook(hook)
+	hook, err := elasticLog.NewAsyncElasticHook(client, appConfig.AppName, logrus.InfoLevel, "go-auth-logs")
+	if err != nil {
+		logrus.Fatalf("Failed to create Elasticsearch hook: %v", err)
+	}
+	esLogger.AddHook(hook)
 
-	dsn := "user:password@tcp(127.0.0.1:" + appConfig.DbPort + ")/mchost_spot_instance?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "user:password@tcp(127.0.0.1:" + appConfig.DbPort + ")/mchost_ip?charset=utf8mb4&parseTime=True&loc=Local"
 
 	esLogger.Info(dsn)
 
@@ -61,7 +60,7 @@ func main() {
 		esLogger.Fatalf("failed to connect database: %v", err)
 	}
 
-	db.AutoMigrate(&models.SpotInstanceTemplate{})
+	db.AutoMigrate(&models.Ip{})
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", appConfig.MicroservicePort))
 	if err != nil {
@@ -80,17 +79,14 @@ func main() {
 		JWTManager: jwtManager.NewJWTManager(appConfig.AppKey, 3600, esLogger),
 		AppConfig:  appConfig,
 		AWSManager: awsManager.NewAWSManager(appConfig.AwsAccessKeyId, appConfig.AwsAccessKeySecret),
-		Redis: queue.NewRedisClient(),
 	}
-
-	queue.StartSpotInstanceWorker(server)
 
 	router := gin.Default()
 
 	controller.SetupHandlers(router, server)
 
 	go router.Run(fmt.Sprintf(":%s", appConfig.AppPort))
-	pb.RegisterSpotServiceServer(grpcServer, server)
+	pb.RegisterIpServiceServer(grpcServer, server)
 
 	if err := grpcServer.Serve(lis); err != nil {
 		esLogger.Fatalf("failed to serve: %v", err)

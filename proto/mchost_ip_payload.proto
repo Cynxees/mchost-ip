@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package mchost_ip.service.v1;
+option go_package = "./pb";
+
+import "proto/mchost_ip_db.proto";
+
+message Empty {}
+
+message DefaultResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}
+
+message CreateIpRequest {
+  string name = 1;
+  int64 userId = 2;
+}
+
+message CreateIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+  string allocationId = 5;
+  uint64 ownerId = 6;
+  string instanceId = 7;
+  uint64 spotInstanceId = 12;
+
+  string name = 8;
+  string type = 9;
+  string region = 10;
+  string address = 11;
+  
+}
+
+message GetIpRequest {
+  int64 ipId = 1;
+}
+
+message GetIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+  Ip ip = 4;
+}
+
+message DeleteIpRequest {
+  int64 ipId = 1;
+}
+
+message DeleteIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}
+
+message ReserveIpRequest {
+  int64 ipId = 1;
+  uint64 spotInstanceTemplateId = 2;
+}
+
+message ReserveIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+  string eipAllocationId = 4;
+}
+
+message UnreserveIpRequest {
+  int64 ipId = 1;
+}
+
+message UnreserveIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}
+
+message UseIpRequest {
+  int64 ipId = 1;
+  string instanceId = 2;
+}
+
+message UseIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}
+
+message UnuseIpRequest {
+  int64 ipId = 1;
+}
+
+message UnuseIpResponse {
+  bool error = 1;
+  uint32 code = 2;
+  string message = 3;
+}

@@ -2,312 +2,208 @@ package api
 
 import (
 	"context"
-	"errors"
-	"fmt"
+	"encoding/json"
 	"net/http"
-	"time"
 
-	"golang.org/x/crypto/ssh"
-
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/ec2/types"
-	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	models "mchost-spot-instance/server/models"
-	pb "mchost-spot-instance/server/pb"
+	models "mchost-ip/server/models"
+	pb "mchost-ip/server/pb"
+	util "mchost-ip/server/lib/util"
 )
 
-func (s *Server) CreateTemplate(ctx context.Context, request *pb.CreateTemplateRequest) (*pb.GetTemplateResponse, error) {
+func (s *Server) CreateIp(ctx context.Context, request *pb.CreateIpRequest) (*pb.CreateIpResponse, error) {
+	s.Logger.Info("Allocating Ip")
+	allocatedIp, err := s.AWSManager.EC2Client.AllocateAddress(ctx, &ec2.AllocateAddressInput{
+		Domain: types.DomainTypeVpc,
+	})
 
-  s.Logger.Info("Creating Template")
-	spotInstanceTemplate := &models.SpotInstanceTemplate{
-		FleetRequestId: nil,
-		InstanceId: nil,
-		UserId: 1,
-		Name: request.Name,
-		Status: "PENDING",
-		InstanceType: "t2.TODO",
-	}
-
-	if err := s.Db.Create(spotInstanceTemplate).Error; err != nil {
+	if err != nil {
 		return nil, err
 	}
-	
-	return &pb.GetTemplateResponse{
-		Error: false,
-		Code: http.StatusOK,
+
+	allocatedIpJson, err := json.Marshal(allocatedIp)
+	if err != nil {
+		return nil, err
+	}
+	s.Logger.Info("Creating Ip: ", string(allocatedIpJson))
+
+	ip := &models.Ip{
+		AllocationId: *allocatedIp.AllocationId,
+		OwnerId:      int(request.UserId),
+		InstanceId:   nil,
+		Name:         request.Name,
+		Type:         "elastic",
+		Region:       s.AWSManager.Config.Region,
+		Address:      *allocatedIp.PublicIp,
+	}
+
+	s.Logger.Info("Creating Ip in database")
+	if err := s.Db.Create(ip).Error; err != nil {
+		return nil, err
+	}
+
+	s.Logger.Info("Ip created in database")
+	return &pb.CreateIpResponse{
+		Error:        false,
+		Code:         http.StatusOK,
+		Message:      "Success",
+		AllocationId: ip.AllocationId,
+		OwnerId:      uint64(ip.OwnerId),
+		InstanceId:   util.SafeString(ip.InstanceId),
+		Name:         ip.Name,
+		Type:         ip.Type,
+		Region:       ip.Region,
+		Address:      ip.Address,
+	}, nil
+}
+
+func (s *Server) GetIp(ctx context.Context, request *pb.GetIpRequest) (*pb.GetIpResponse, error) {
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
+	}
+
+	return &pb.GetIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
 		Message: "Success",
-		Template: &pb.SpotInstanceTemplate{
-			Id: uint64(spotInstanceTemplate.Id),
-			UserId: uint64(spotInstanceTemplate.UserId),
-			Name: spotInstanceTemplate.Name,
-			Status: spotInstanceTemplate.Status,
-			InstanceType: spotInstanceTemplate.InstanceType,
-			CreatedAt: timestamppb.New(spotInstanceTemplate.CreatedAt),
-			UpdatedAt: timestamppb.New(spotInstanceTemplate.UpdatedAt),
+		Ip: &pb.Ip{
+			Id:           uint64(ip.ID),
+			AllocationId: ip.AllocationId,
+			InstanceId:   util.SafeString(ip.InstanceId),
+			OwnerId:      uint64(ip.OwnerId),
+			Name:         ip.Name,
+			Type:         ip.Type,
+			Region:       ip.Region,
+			Address:      ip.Address,
+			CreatedAt:    timestamppb.New(ip.CreatedAt),
+			UpdatedAt:    timestamppb.New(ip.UpdatedAt),
 		},
 	}, nil
 }
 
-func (s *Server) LaunchSpotFleet(ctx context.Context, request *pb.LaunchTemplateRequest) (*ec2.RequestSpotFleetOutput, error) {
 
-  result, err := s.GetTemplate(ctx, &pb.GetTemplateRequest{SpotInstanceTemplateId: request.SpotInstanceTemplateId});
-  if err != nil {
-    return nil, err
-  }
+func (s *Server) DeleteIp(ctx context.Context, request *pb.DeleteIpRequest) (*pb.DeleteIpResponse, error){
 
-  template := result.Template
-
-  if(template.Status == "ACTIVE") {
-    return nil, errors.New("template is already active")
-  }
-
-	client := s.AWSManager.EC2Client
-
-  s.Logger.Info(template)
-
-	spotRequestInput := &ec2.RequestSpotFleetInput{
-		SpotFleetRequestConfig: &types.SpotFleetRequestConfigData{
-
-			IamFleetRole:   aws.String("arn:aws:iam::071412439153:role/aws-ec2-spot-fleet-tagging-role"),
-			TargetCapacity: aws.Int32(1),
-      TagSpecifications: []types.TagSpecification{
-        {
-          ResourceType: types.ResourceTypeSpotFleetRequest,
-          Tags: []types.Tag{
-            {
-              Key: aws.String("project"),
-              Value: aws.String("mchost"),
-            },
-          },
-        },
-      },
-
-			InstanceInterruptionBehavior: types.InstanceInterruptionBehaviorStop,
-			LaunchSpecifications: []types.SpotFleetLaunchSpecification{
-				{
-					ImageId:      aws.String(template.AmiId),
-					InstanceType: types.InstanceTypeT32xlarge,
-					KeyName:      aws.String("minecraft-server"),
-					SecurityGroups: []types.GroupIdentifier{
-						{
-							GroupId: aws.String("sg-06f8c1349d5087902"),
-						},
-					},
-
-					IamInstanceProfile: &types.IamInstanceProfileSpecification{
-						Arn: aws.String("arn:aws:iam::071412439153:instance-profile/EC2-S3-FullAccess"),
-					},
-				},
-			},
-		},
+	s.Logger.Info("Releasing Ip")
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
 	}
 
-	fleetRequest, err := client.RequestSpotFleet(ctx, spotRequestInput)
-	if err != nil {
-		s.Logger.Fatal(err)
-	}
-
-  if err := s.Db.Model(&models.SpotInstanceTemplate{}).
-    Where("id = ?", request.SpotInstanceTemplateId).
-    UpdateColumns(map[string] interface{}{
-      "fleet_request_id": fleetRequest.SpotFleetRequestId,
-      "status": "ACTIVE",
-    }).Error; err != nil {
-    return nil, err
-    }
-
-	s.Logger.Info(fleetRequest)
-
-	delay := time.Now().Add(20 * time.Second).Unix()
-	err = s.Redis.ZAdd(ctx, "spot_instance_queue", redis.Z{
-		Score: float64(delay),
-		Member: fleetRequest.SpotFleetRequestId,
-	}).Err()
-	if err != nil {
-		return nil, errors.New("failed to push to queue");
-	}
-
-	return fleetRequest, nil
-}
-
-func (s *Server) GetTemplate (ctx context.Context, request *pb.GetTemplateRequest) (*pb.GetTemplateResponse, error) {
-  
-  template := &models.SpotInstanceTemplate{}
-  if err := s.Db.Where("id = ?", request.SpotInstanceTemplateId).First(template).Error; err != nil {
-    return nil, err
-  }
-
-  if template.FleetRequestId != nil {
-
-    //TODO: maybe redundant
-    fleetRequest, err := s.AWSManager.EC2Client.DescribeSpotFleetRequests(ctx, &ec2.DescribeSpotFleetRequestsInput{
-      SpotFleetRequestIds: []string{*template.FleetRequestId},
-    })
-    if err != nil {
-      return nil, err
-    }
-
-    if len(fleetRequest.SpotFleetRequestConfigs) > 0 {
-
-      s.Logger.Info("getting instances")
-      instances, err := s.AWSManager.EC2Client.DescribeSpotFleetInstances(ctx, &ec2.DescribeSpotFleetInstancesInput{
-        SpotFleetRequestId: template.FleetRequestId,
-      })
-      if err != nil {
-        return nil, err
-      }
-
-      if len(instances.ActiveInstances) > 0 {
-        s.Logger.Info("getting active instance")
-        firstInstanceId := instances.ActiveInstances[0].InstanceId
-        template.InstanceId = firstInstanceId
-        s.Logger.Info("First instance ID:", *firstInstanceId)
-      } else {
-        s.Logger.Warn("No active instances found for fleet request:", *template.FleetRequestId)
-      }
-    }
-  }
-
-  return &pb.GetTemplateResponse{
-    Error: false,
-    Code: http.StatusOK,
-    Message: "Success",
-    Template: &pb.SpotInstanceTemplate{
-      Id: uint64(template.ID),
-      FleetRequestId: func() string {
-          if template.FleetRequestId != nil {
-              return *template.FleetRequestId
-          }
-          return ""
-      }(),
-      InstanceId: func() string {
-          if template.InstanceId != nil {
-              return *template.InstanceId
-          }
-          return ""
-      }(),
-      UserId: uint64(template.UserId),
-      Name: template.Name,
-      Status: template.Status,
-      InstanceType: template.InstanceType,
-      CreatedAt: timestamppb.New(template.CreatedAt),
-      UpdatedAt: timestamppb.New(template.UpdatedAt),
-      AmiId: template.AmiId,
-    },
-  }, nil
-}
-
-func (s *Server) StopTemplate (ctx context.Context, request *pb.StopTemplateRequest) (*pb.StopTemplateResponse, error) {
-  
-  template := &models.SpotInstanceTemplate{}
-  if err := s.Db.Where("id = ?", request.SpotInstanceTemplateId).First(template).Error; err != nil {
-    return nil, err
-  }
-
-  if template.Status != "ACTIVE" {
-    return nil, errors.New("template is not active")
-  }
-
-  if template.FleetRequestId == nil {
-    return nil, errors.New("fleet request ID is nil")
-  }
-  
-	if err := s.runStopScript(ctx, *template.InstanceId); err != nil {
-    s.Logger.Error("Failed to run Stop Script:", err)
-		return nil, errors.New("failed to run stop script")
-	}
-  
-  _, err := s.AWSManager.EC2Client.CancelSpotFleetRequests(ctx, &ec2.CancelSpotFleetRequestsInput{
-    TerminateInstances: aws.Bool(true),
-    SpotFleetRequestIds: []string{*template.FleetRequestId},
-  })
-
-  if err != nil {
-    return nil, err
-  }
-
-  if err := s.Db.Model(&models.SpotInstanceTemplate{}).
-    Where("id = ?", request.SpotInstanceTemplateId).
-    UpdateColumns(map[string] interface{}{
-      "fleet_request_id": nil,
-			"instance_id": nil,
-      "status": "PENDING",
-    }).Error; err != nil {
-    return nil, err
-  }
-  
-  return &pb.StopTemplateResponse{
-    Error: false,
-    Code: http.StatusOK,
-    Message: "Success",
-  }, nil
-}
-
-// runStopScript connects to the EC2 instance and uploads the Minecraft data to S3
-func (s *Server) runStopScript(ctx context.Context, instanceId string) error {
-	// Fetch instance details to get public IP
-	instanceDetails, err := s.AWSManager.EC2Client.DescribeInstances(ctx, &ec2.DescribeInstancesInput{
-		InstanceIds: []string{instanceId},
+	_, err := s.AWSManager.EC2Client.ReleaseAddress(ctx, &ec2.ReleaseAddressInput{
+		AllocationId: &ip.AllocationId,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	if len(instanceDetails.Reservations) == 0 || len(instanceDetails.Reservations[0].Instances) == 0 {
-		return errors.New("instance not found")
-	}
-	instance := instanceDetails.Reservations[0].Instances[0]
-	publicIP := instance.PublicIpAddress
-
-	// SSH into the instance
-	sshClient, err := s.connectSSH(*publicIP)
-	if err != nil {
-		return err
-	}
-	defer sshClient.Close()
-
-	// Stop, Upload data files to S3
-	cmd := "/home/ubuntu/mchost/mchost-config/scripts/stop.sh"
-	// cmd := fmt.Sprintf("aws s3 sync /homemchost-%s", *instance.Placement.AvailabilityZone)
-	session, err := sshClient.NewSession()
-	if err != nil {
-		return err
-	}
-	defer session.Close()
-
-  s.Logger.Info("Running stop command:", cmd)
-	output, err := session.CombinedOutput(cmd); 
-  
-  if err != nil {
-		return fmt.Errorf("failed to run stop command: %v", err)
+	s.Logger.Info("Deleting Ip from database")
+	if err := s.Db.Delete(ip).Error; err != nil {
+		return nil, err
 	}
 
-	fmt.Println("Stop command Output:", string(output))
-	return nil
+	s.Logger.Info("Ip deleted from database")
+	return &pb.DeleteIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
+		Message: "Success",
+	}, nil
 }
 
-// connectSSH creates an SSH connection to the EC2 instance
-func (s *Server) connectSSH(host string) (*ssh.Client, error) {
+func (s *Server) ReserveIp(ctx context.Context, request *pb.ReserveIpRequest) (*pb.ReserveIpResponse, error){
 
-	config := &ssh.ClientConfig{
-		User: "ubuntu",
-		Auth: []ssh.AuthMethod{
-			ssh.Password("pass"),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         5 * time.Second,
+	s.Logger.Info("Associating Ip with spot instance")
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
 	}
 
-	addr := fmt.Sprintf("%s:%d", host, 22)
-  s.Logger.Info("Connecting to SSH:", addr)
-	client, err := ssh.Dial("tcp", addr, config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to SSH: %w", err)
+	id := int(request.SpotInstanceTemplateId)
+	ip.SpotInstanceTemplateId = &id
+
+	s.Logger.Info("Updating Ip in database")
+	if err := s.Db.Save(ip).Error; err != nil {
+		return nil, err
 	}
 
-  s.Logger.Info("Connected to SSH:", addr)
-	return client, nil
+	s.Logger.Info("Ip updated in database")
+	return &pb.ReserveIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
+		Message: "Success",
+		EipAllocationId: ip.AllocationId,
+	}, nil
+}
+
+func (s *Server) UnreserveIp(ctx context.Context, request *pb.UnreserveIpRequest) (*pb.UnreserveIpResponse, error){
+
+	s.Logger.Info("Disassociating Ip from instance")
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
+	}
+
+	ip.SpotInstanceTemplateId = nil
+
+	s.Logger.Info("Updating Ip in database")
+	if err := s.Db.Save(ip).Error; err != nil {
+		return nil, err
+	}
+
+	s.Logger.Info("Ip updated in database")
+	return &pb.UnreserveIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
+		Message: "Success",
+	}, nil
+}
+
+func (s *Server) UseIp(ctx context.Context, request *pb.UseIpRequest) (*pb.UseIpResponse, error){
+
+	s.Logger.Info("Associating Ip with instance")
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
+	}
+
+	ip.InstanceId = &request.InstanceId
+
+	s.Logger.Info("Updating Ip in database")
+	if err := s.Db.Save(ip).Error; err != nil {
+		return nil, err
+	}
+
+	s.Logger.Info("Ip updated in database")
+	return &pb.UseIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
+		Message: "Success",
+	}, nil
+}
+
+func (s *Server) UnuseIp(ctx context.Context, request *pb.UnuseIpRequest) (*pb.UnuseIpResponse, error){
+
+	s.Logger.Info("Disassociating Ip from instance")
+	ip := &models.Ip{}
+	if err := s.Db.Where("id = ?", request.IpId).First(ip).Error; err != nil {
+		return nil, err
+	}
+
+	ip.InstanceId = nil
+
+	s.Logger.Info("Updating Ip in database")
+	if err := s.Db.Save(ip).Error; err != nil {
+		return nil, err
+	}
+
+	s.Logger.Info("Ip updated in database")
+	return &pb.UnuseIpResponse{
+		Error:   false,
+		Code:    http.StatusOK,
+		Message: "Success",
+	}, nil
 }

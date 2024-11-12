@@ -24,9 +24,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spot"
+                    "Ip"
                 ],
-                "summary": "Create Spot Fleet Template",
+                "summary": "Create Ip Fleet Ip",
                 "parameters": [
                     {
                         "description": "Request Body",
@@ -34,7 +34,40 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.CreateTemplateRequest"
+                            "$ref": "#/definitions/pb.CreateIpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/delete": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ip"
+                ],
+                "summary": "Delete Ip",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "requestBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pb.DeleteIpRequest"
                         }
                     }
                 ],
@@ -57,9 +90,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spot"
+                    "Ip"
                 ],
-                "summary": "Get Spot Fleet Instances",
+                "summary": "Get Ip Fleet Instances",
                 "parameters": [
                     {
                         "description": "Request Body",
@@ -67,40 +100,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.GetTemplateRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/launch": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Spot"
-                ],
-                "summary": "Launch Spot Fleet Instances",
-                "parameters": [
-                    {
-                        "description": "Request Body",
-                        "name": "requestBody",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/pb.LaunchTemplateRequest"
+                            "$ref": "#/definitions/pb.GetIpRequest"
                         }
                     }
                 ],
@@ -137,7 +137,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/stop": {
+        "/unuse": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -146,9 +146,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Spot"
+                    "Ip"
                 ],
-                "summary": "Stop Spot Fleet Instances",
+                "summary": "Unuse Ip",
                 "parameters": [
                     {
                         "description": "Request Body",
@@ -156,7 +156,40 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pb.StopTemplateRequest"
+                            "$ref": "#/definitions/pb.UnuseIpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/use": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Ip"
+                ],
+                "summary": "Use Ip",
+                "parameters": [
+                    {
+                        "description": "Request Body",
+                        "name": "requestBody",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pb.UseIpRequest"
                         }
                     }
                 ],
@@ -172,34 +205,48 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "pb.CreateTemplateRequest": {
+        "pb.CreateIpRequest": {
             "type": "object",
             "properties": {
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "pb.GetTemplateRequest": {
-            "type": "object",
-            "properties": {
-                "spotInstanceTemplateId": {
+                },
+                "userId": {
                     "type": "integer"
                 }
             }
         },
-        "pb.LaunchTemplateRequest": {
+        "pb.DeleteIpRequest": {
             "type": "object",
             "properties": {
-                "spotInstanceTemplateId": {
+                "ipId": {
                     "type": "integer"
                 }
             }
         },
-        "pb.StopTemplateRequest": {
+        "pb.GetIpRequest": {
             "type": "object",
             "properties": {
-                "spotInstanceTemplateId": {
+                "ipId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pb.UnuseIpRequest": {
+            "type": "object",
+            "properties": {
+                "ipId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "pb.UseIpRequest": {
+            "type": "object",
+            "properties": {
+                "instanceId": {
+                    "type": "string"
+                },
+                "ipId": {
                     "type": "integer"
                 }
             }

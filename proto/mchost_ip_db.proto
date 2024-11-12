@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package mchost_ip.service.v1;
+option go_package = "./pb";
+
+message Ip {
+    uint64 id = 1;
+    string allocationId = 2;
+    string spotInstanceTemplateId = 4;
+    string instanceId = 5;
+    uint64 ownerId = 6;
+    
+    string name = 7;
+    string region = 8;
+    string address = 9;
+    string type = 10;
+    
+    google.protobuf.Timestamp created_at = 11;
+    google.protobuf.Timestamp updated_at = 12;
+}

@@ -1,10 +1,10 @@
 package api
 
 import (
-	aws "mchost-spot-instance/server/aws"
-	"mchost-spot-instance/server/config"
-	manager "mchost-spot-instance/server/jwt"
-	"mchost-spot-instance/server/pb"
+	aws "mchost-ip/server/aws"
+	"mchost-ip/server/config"
+	manager "mchost-ip/server/jwt"
+	"mchost-ip/server/pb"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
@@ -12,11 +12,11 @@ import (
 )
 
 type Server struct {
-	pb.SpotServiceServer
+	pb.IpServiceServer
 	Db         *gorm.DB
 	Logger     *logrus.Logger
 	JWTManager *manager.JWTManager
 	AppConfig  *config.Config
 	AWSManager *aws.AWSManager
-	Redis 		 *redis.Client
+	Redis      *redis.Client
 }

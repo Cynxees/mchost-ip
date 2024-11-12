@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"mchost-spot-instance/server/config"
+	"mchost-ip/server/config"
 
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/ecslogrus"
